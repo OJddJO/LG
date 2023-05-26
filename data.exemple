@@ -12,6 +12,6 @@ playerdata: {
     }
     "chat" : [
         ["global/village/lg", "msg"]
-    ]       liste de 20 max
+    ]       liste de 100 max
     "turn" : "lg"     defini le tour
 }

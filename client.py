@@ -20,7 +20,7 @@ class Network:
         try:
             self.client.connect(self.addr)
             print("Connected !")
-            return self.client.recv(8192).decode()
+            return self.client.recv(4096).decode()
         except:
             pass
 
@@ -28,7 +28,7 @@ class Network:
     def send(self, data):
         try:
             self.client.send(str.encode(data))
-            return self.client.recv(8192).decode()
+            return self.client.recv(4096).decode()
         except socket.error as e:
             print(e)
 
@@ -41,48 +41,52 @@ class Interface:
         self.data = eval(self.conn.player)
         self.playerID = self.data["playerID"]
         self.role = self.data["role"]
-        self.chat = "global"
-        self.state = "vivant"
-        self.action = "sleep"
+        self.chat = self.data["chat"]
+        self.receivedChat = []
+        self.lastMsg = ""
+        self.state = self.data["state"]
+        self.action = self.data["action"]
         self.msg = ""
+        self.lover = self.data["lover"]
 
         self.roleDict = {
             "Villageois": {
-                "chat": "Village",
+                "chat": "village",
                 "def": "Vous devez éliminer les Loups Garou au vote !"
             },
             "Loup Garou": {
-                "chat": "Loup Garou",
+                "chat": "lg",
                 "def": "Vous devez tuer tous les innocents !"
             },
             "Voyante": {
-                "chat": "Village",
+                "chat": "voyante",
                 "def": "Vous pouvez voir le rôle d'un joueur\nchaque nuit !"
             },
             "Sorciere": {
-                "chat": "Village",
+                "chat": "sorciere",
                 "def": "Vous pouvez sauver un joueur de la mort\net/ou tuer un joueur chaque nuit !\n(Une seule fois chaque pouvoir)"
             },
             "Chasseur": {
-                "chat": "Village",
+                "chat": "chasseur",
                 "def": "Vous pouvez tuer un joueur lorsque vous\nmourrez !"
             },
             "Cupidon": {
-                "chat": "Village",
+                "chat": "cupidon",
                 "def": "Vous pouvez lier deux joueurs ensembles !\n(Début de partie)"
             },
             "Petite Fille": {
-                "chat": "Village",
+                "chat": "petite fille",
                 "def": "Vous pouvez espionner les Loups Garou chaque\nnuit !"
             },
             "Salvateur": {
-                "chat": "Village",
+                "chat": "salvateur",
                 "def": "Vous pouvez protéger un joueur\nde la mort chaque nuit !\n(Pas deux fois de suite la meme personne)"
             }
         }
 
         self.root = tk.Tk()
         self.root.title("Loup Garou")
+        self.root.resizable(False, False)
 
         self.frame = tk.Frame(self.root)
         self.frame.grid(column=1, row=1, rowspan=2)
@@ -121,17 +125,36 @@ class Interface:
             "msg": self.msg
         }
         self.msg = ""
-        return self.conn.send(str(data))
+        data = str(data)
+        return self.conn.send(data)
 
 
     def validateMessage(self):
         self.msg = self.chatentry.get()
         self.chatentry.delete(0, tk.END)
 
+    
+    def updateChat(self):
+        self.receivedChat = self.data["chat"]
+        if self.receivedChat != []:
+            if self.receivedChat[-1] != self.lastMsg:
+                msg = self.receivedChat[-1]
+                print(msg)
+                if msg[0] == "global":
+                    self.chatbox.insert(tk.END, msg[1] + "\n")
+                elif msg[0] == self.roleDict[self.role]["chat"]:
+                    self.chatbox.insert(tk.END, msg[1] + "\n")
+                elif msg[0] == self.playerID:
+                    self.chatbox.insert(tk.END, msg[1] + "\n")
+                self.chatbox.see(tk.END)
+                self.lastMsg = msg
+
 
     def update(self):
         self.root.update()
-        self.send()
+        data = self.send()
+        self.data = eval(data)
+        self.updateChat()
 
 
 app = Interface()

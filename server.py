@@ -28,7 +28,7 @@ class Server:
         self.data = {
             "players": {},
             "chat": [],
-            "turn": "lg"
+            "turn": "cupidon"
         }
         self.roles = [] #define roles
 
@@ -46,7 +46,8 @@ class Server:
             "chat": "global",
             "state": "vivant",
             "action": "sleep",
-            "msg": ""
+            "msg": "",
+            "lover": ""
         }
         self.data["players"][self.playercount] = playerdata
         self.roles.remove(playerdata["role"])
@@ -55,7 +56,7 @@ class Server:
 
         while True:
             try:
-                recvData = conn.recv(8192).decode() #receive data from client
+                recvData = conn.recv(4096).decode() #receive data from client
                 if not recvData:
                     print("Client", addr, ": Disconnected")
                 else:
@@ -64,9 +65,10 @@ class Server:
                     sendData = str(self.data) #send data to client
                     reply = str.encode(sendData)
 
-                conn.send(reply)
-            except:
+                conn.sendall(reply)
+            except Exception as e:
                 print("Client", addr, ": Lost Connection")
+                print(e)
                 break
 
         self.playercount -= 1
@@ -75,14 +77,20 @@ class Server:
     def getData(self, data):
         data = eval(data)
         if data["msg"] != "":
-            if data["msg"].startswith("/vote"):
+            if data["msg"].startswith("/help"):
+                self.data["chat"].append([data["playerID"], "Liste des commandes: /help, /vote [ID joueur], /lgvote [ID joueur], /amour [ID joueur] [IDjoueur], /tuer [ID joueur], /sauver [ID joueur]"])
+            elif data["msg"].startswith("/vote"):
+                pass
+            elif data["msg"].startswith("/lgvote"):
+                pass
+            elif data["msg"].startswith("/amour"):
                 pass
             elif data["msg"].startswith("/tuer"):
                 pass
             elif data["msg"].startswith("/sauver"):
                 pass
             else:
-                self.data["msg"].append([data["chat"], data["msg"]])
+                self.data["chat"].append([data["chat"], f"[Player {data['playerID']}] {data['msg']}"])
 
 
     def nextTurn(self):
@@ -147,9 +155,36 @@ class Server:
 
     
     def runGame(self):
-        if self.data["turn"] == "cupidon":
+        if self.data["turn"] == "cupidon": # if it's cupidon's turn
             for element in self.data["players"]:
-                pass
+                self.data["players"][element]["action"] = "cupidon"
+        
+        elif self.data["turn"] == "lg": # if it's loup garou's turn
+            for element in self.data["players"]:
+                self.data["players"][element]["action"] = "lg"
+        
+        elif self.data["turn"] == "voyante": # if it's voyante's turn
+            for element in self.data["players"]:
+                self.data["players"][element]["action"] = "voyante"
+        
+        elif self.data["turn"] == "sorciere": # if it's sorciere's turn
+            for element in self.data["players"]:
+                self.data["players"][element]["action"] = "sorciere"
+        
+        elif self.data["turn"] == "chasseur": # if it's chasseur's turn
+            for element in self.data["players"]:
+                self.data["players"][element]["action"] = "chasseur"
+        
+        elif self.data["turn"] == "salvateur": # if it's salvateur's turn
+            for element in self.data["players"]:
+                self.data["players"][element]["action"] = "salvateur"
+        
+        elif self.data["turn"] == "petite fille": # if it's petite fille's turn
+            for element in self.data["players"]:
+                self.data["players"][element]["action"] = "petite fille"
+        
+        if len(self.data["chat"]) > 100: #limit chat size to 100
+            self.data["chat"].pop(0)
 
 
 
