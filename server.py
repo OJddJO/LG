@@ -28,7 +28,8 @@ class Server:
         self.data = {
             "players": {},
             "chat": [["global", "Bienvenue dans le chat ! Tapez /help pour afficher la liste des commandes"]],
-            "turn": "cupidon"
+            "turn": "cupidon",
+            "gameState": "Démarrage"
         }
         self.roles = [] #define roles
 
@@ -39,13 +40,12 @@ class Server:
 
 
     def clientConn(self, conn, addr):
-        self.playercount += 1
         playerdata = {
             "playerID": self.playercount,
             "role": random.choice(self.roles),
             "chat": "global",
-            "state": "vivant",
-            "action": "sleep",
+            "state": "Vivant",
+            "vote": "",
             "msg": "",
             "lover": ""
         }
@@ -56,7 +56,7 @@ class Server:
 
         while True:
             try:
-                recvData = conn.recv(4096).decode() #receive data from client
+                recvData = conn.recv(8192).decode() #receive data from client
                 if not recvData:
                     print("Client", addr, ": Disconnected")
                 else:
@@ -78,23 +78,32 @@ class Server:
         data = eval(data)
         if data["msg"] != "":
             if data["msg"].startswith("/help"):
-                self.data["chat"].append([data["playerID"], "Liste des commandes: /help, /vote [ID joueur], /lgvote [ID joueur], /fleche [ID joueur] [ID joueur], /tuer [ID joueur], /sauver [ID joueur]"])
+                self.data["chat"].append([data["playerID"], "Liste des commandes: /help, /joueur en vie, /vote [ID joueur], /lgvote [ID joueur], /fleche [ID joueur] [ID joueur], /tuer [ID joueur], /sauver [ID joueur]"])
+            elif data["msg"].startswith("/joueurs en vie"):
+                alivePlayers = []
+                for player in self.data["players"]:
+                    if self.data["players"][player]["state"] == "Vivant":
+                        alivePlayers.append(player)
+                self.data["chat"].append([data["playerID"], f"Joueurs en vie: {alivePlayers}"])
             elif data["msg"].startswith("/vote"):
                 pass
             elif data["msg"].startswith("/lgvote"):
                 pass
             elif data["msg"].startswith("/fleche"):
                 if self.data["turn"] == "cupidon" and self.data["players"][data["playerID"]]["role"] == "Cupidon":
-                    if data["msg"].split(" ")[1] == data["msg"].split(" ")[2]:
-                        self.data["chat"].append([data["playerID"], "Vous ne pouvez pas faire cela !"])
-                    else:
-                        j1 = int(data["msg"].split(" ")[1])
-                        j2 = int(data["msg"].split(" ")[2])
-                        self.data["chat"].append([j1, f"Vous êtes touché(e) par la flèche Cupidon ! Vous êtes maintenant follement amoureux du Joueur {str(j2)}. Si l'un de vous meurt, l'autre vous suivra dans la mort !"])
-                        self.data["chat"].append([j2, f"Vous êtes touché(e) par la flèche Cupidon ! Vous êtes maintenant follement amoureux du Joueur {str(j1)}. Si l'un de vous meurt, l'autre vous suivra dans la mort !"])
-                        self.data["players"][j1]["lover"] = j2
-                        self.data["players"][j2]["lover"] = j1
-                        self.nextTurn()
+                    try:
+                        if data["msg"].split(" ")[1] == data["msg"].split(" ")[2]:
+                            self.data["chat"].append([data["playerID"], "Vous ne pouvez pas faire cela !"])
+                        else:
+                            j1 = int(data["msg"].split(" ")[1])
+                            j2 = int(data["msg"].split(" ")[2])
+                            self.data["chat"].append([j1, f"Vous êtes touché(e) par la flèche Cupidon ! Vous êtes maintenant follement amoureux du Joueur {str(j2)}. Si l'un de vous meurt, l'autre vous suivra dans la mort !"])
+                            self.data["chat"].append([j2, f"Vous êtes touché(e) par la flèche Cupidon ! Vous êtes maintenant follement amoureux du Joueur {str(j1)}. Si l'un de vous meurt, l'autre vous suivra dans la mort !"])
+                            self.data["players"][j1]["lover"] = j2
+                            self.data["players"][j2]["lover"] = j1
+                            self.nextTurn()
+                    except:
+                        self.data["chat"].append([data["playerID"], "Une erreur est survenue ! Veuillez réessayer."])
                 elif self.data["players"][data["playerID"]]["role"] != "Cupidon":
                     self.data["chat"].append([data["playerID"], "Vous n'êtes pas Cupidon !"])
                 else:
@@ -107,34 +116,97 @@ class Server:
                 self.data["chat"].append([data["chat"], f"[Player {data['playerID']}] {data['msg']}"])
 
 
-    def nextTurn(self):
-        currentTurn = self.data["turn"]
-        if currentTurn == "cupidon":
-            self.data["turn"] = "jour"
-        elif currentTurn == "jour":
-            self.data["turn"] = "voyante"
-        elif currentTurn == "voyante":
-            self.data["turn"] = "salvateur"
-        elif currentTurn == "salvateur":
-            self.data["turn"] = "lg"
-        elif currentTurn == "lg":
-            self.data["turn"] = "sorciere"
-        elif currentTurn == "sorciere":
-            self.data["turn"] = "jour"
+    def nextTurn(self): #change turn
+        #check the role that are still alive
+        dictRole = {
+            "Voyante": False,
+            "Salvateur": False,
+            "Loup Garou": False,
+            "Sorciere": False,
+            "Villageois": False,
+            "Chasseur": False,
+            "Petite Fille": False,
+            "Cupidon": False
+        }
+        for player in self.data["players"]:
+            playerRole = self.data["players"][player]["role"]
+            if playerRole not in dictRole:
+                if self.data["players"][player]["state"] == "Vivant":
+                    dictRole[playerRole] = True
+        
+        #check if the game is over
+        if dictRole["Loup Garou"] == False:
+            self.data["gameState"] = "Villageois"
+            self.data["chat"].append(["global", "Les villageois ont gagné !"])
+        elif dictRole["Villageois"] == False and dictRole["Chasseur"] == False and dictRole["Petite Fille"] == False and dictRole["Cupidon"] == False and dictRole["Sorciere"] == False and dictRole["Salvateur"] == False and dictRole["Voyante"] == False:
+            self.data["gameState"] = "Loup Garou"
+            self.data["chat"].append(["global", "Les loups garous ont gagné !"])
+        else:
+            turnList = ["vote", "voyante", "salvateur", "lg", "sorciere"]
+
+            if dictRole["Voyante"] == False:
+                turnList.remove("voyante")
+            if dictRole["Salvateur"] == False:
+                turnList.remove("salvateur")
+            if dictRole["Loup Garou"] == False:
+                turnList.remove("lg")
+            if dictRole["Sorciere"] == False:
+                turnList.remove("sorciere")
+
+            previousTurn = self.data["turn"]
+            #end turn message
+            if previousTurn == ["vote"]:
+                self.data["chat"].append(["global", "La nuit tombe sur le village..."])
+            elif previousTurn == ["voyante"]:
+                self.data["chat"].append(["global", "La voyante se rendort..."])
+            elif previousTurn == ["salvateur"]:
+                self.data["chat"].append(["global", "Le salvateur se rendort..."])
+            elif previousTurn == ["lg"]:
+                self.data["chat"].append(["global", "Les loups garous se rendorment..."])
+            elif previousTurn == ["sorciere"]:
+                self.data["chat"].append(["global", "La sorcière se rendort..."])
+            
+            #next turn message
+            turnIndex = turnList.index(previousTurn) + 1
+            if turnIndex == len(turnList):
+                turnIndex = 0
+            nextTurn = turnList[turnIndex]
+            if nextTurn == "vote":
+                self.data["chat"].append(["global", "Le jour se lève sur le village..."])
+                self.data["chat"].append(["global", "Tout le monde se réveille..."])
+                self.data["chat"].append(["global", "Il est temps de voter pour éliminer un joueur !"])
+            elif nextTurn == "voyante":
+                self.data["chat"].append(["global", "La voyante se réveille..."])
+                self.data["chat"].append(["global", "Voyante, choisissez un joueur à espionner !"])
+            elif nextTurn == "salvateur":
+                self.data["chat"].append(["global", "Le salvateur se réveille..."])
+                self.data["chat"].append(["global", "Salvateur, choisissez un joueur à protéger !"])
+            elif nextTurn == "lg":
+                self.data["chat"].append(["global", "Les loups garous se réveillent..."])
+                self.data["chat"].append(["global", "Loups Garous, choisissez un joueur à tuer !"])
+            elif nextTurn == "sorciere":
+                self.data["chat"].append(["global", "La sorcière se réveille..."])
+                self.data["chat"].append(["global", "Sorcière, choisissez un joueur à tuer ou à sauver !"])
+            self.data["turn"] = nextTurn
 
 
     def connPlayer(self):
 
-        while self.playercount < self.playerMax:
+        while self.playercount != self.playerMax:
             #wait until a connection is etablished
             conn, addr = self.s.accept()
+            self.playercount += 1
             print("Client Connected:", addr)
 
-            if self.playercount == 0:
-                pass
+            self.data["chat"].append(["global", f"Player {self.playercount} joined the game !"])
 
             #start async connection for client
             start_new_thread(self.clientConn, (conn, addr))
+        
+        self.data["gameState"] = "En jeu"
+        self.data["chat"].append(["global", "La partie commence !"])
+        self.data["chat"].append(["global", "La nuit tombe sur le village..."])
+        self.data["chat"].append(["global", "Cupidon, choisissez deux joueurs à lier avec votre flèche !"])
 
 
     def defineRoles(self): #init
@@ -181,37 +253,11 @@ class Server:
 
     
     def runGame(self):
-        if self.data["turn"] == "cupidon": # if it's cupidon's turn
-            for element in self.data["players"]:
-                self.data["players"][element]["action"] = "cupidon"
-        
-        elif self.data["turn"] == "lg": # if it's loup garou's turn
-            for element in self.data["players"]:
-                self.data["players"][element]["action"] = "lg"
-        
-        elif self.data["turn"] == "voyante": # if it's voyante's turn
-            for element in self.data["players"]:
-                self.data["players"][element]["action"] = "voyante"
-        
-        elif self.data["turn"] == "sorciere": # if it's sorciere's turn
-            for element in self.data["players"]:
-                self.data["players"][element]["action"] = "sorciere"
-        
-        elif self.data["turn"] == "chasseur": # if it's chasseur's turn
-            for element in self.data["players"]:
-                self.data["players"][element]["action"] = "chasseur"
-        
-        elif self.data["turn"] == "salvateur": # if it's salvateur's turn
-            for element in self.data["players"]:
-                self.data["players"][element]["action"] = "salvateur"
-        
-        elif self.data["turn"] == "petite fille": # if it's petite fille's turn
-            for element in self.data["players"]:
-                self.data["players"][element]["action"] = "petite fille"
-        
         if len(self.data["chat"]) > 100: #limit chat size to 100
             self.data["chat"].pop(0)
 
 
 server = Server()
 server.connPlayer()
+while True:
+    server.runGame()

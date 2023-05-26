@@ -4,7 +4,6 @@ playerdata: {
         1: {       nombre = joueur
             "playerID"
             "chat"
-            "action"
             "role"
             "state"
             "msg"
@@ -14,4 +13,5 @@ playerdata: {
         ["global/village/lg", "msg"]
     ]       liste de 100 max
     "turn" : "lg"     defini le tour
+    "gameState": "starting"
 }

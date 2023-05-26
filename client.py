@@ -23,7 +23,7 @@ class Network:
         try:
             self.client.connect(self.addr)
             print("Connected !")
-            return self.client.recv(4096).decode()
+            return self.client.recv(8192).decode()
         except:
             pass
 
@@ -31,7 +31,7 @@ class Network:
     def send(self, data):
         try:
             self.client.send(str.encode(data))
-            return self.client.recv(4096).decode()
+            return self.client.recv(8192).decode()
         except socket.error as e:
             print(e)
 
@@ -49,10 +49,8 @@ class Interface:
         self.loggedChat = []
         self.lastMsg = ""
         self.state = self.data["state"]
-        self.action = self.data["action"]
         self.msg = ""
         self.lover = self.data["lover"]
-        print([self.lover])
 
         self.roleDict = {
             "Villageois": {
@@ -129,16 +127,18 @@ class Interface:
             "role": self.role,
             "chat": self.chat,
             "state": self.state,
-            "action": self.action,
-            "msg": self.msg
+            "msg": self.msg,
+            "lover": self.lover
         }
         self.msg = ""
-        data = str(data)
-        return self.conn.send(data)
+        return self.conn.send(str(data))
 
 
     def validateMessage(self):
-        self.msg = self.chatentry.get()
+        if self.data["gameState"] == "En jeu":
+            self.msg = self.chatentry.get()
+        else:
+            self.msg = ""
         self.chatentry.delete(0, tk.END)
 
     
@@ -168,11 +168,13 @@ class Interface:
 
         # Update data
         self.state = self.data["players"][self.playerID]["state"]
-        self.action = self.data["players"][self.playerID]["action"]
         self.lover = self.data["players"][self.playerID]["lover"]
 
+        # Update info
+        self.root.title("Loup Garou - " + self.data["gameState"] + " - " + self.state)
+
         self.updateChat()
-        if self.lover != "" and self.lover.grid_info() == {}:
+        if self.lover != "" and self.loverText.grid_info() == {}:
             self.loverText.config(text="Vous êtes amoureux du joueur " + self.lover)
             self.loverText.grid(column=1, row=6)
 
