@@ -1,0 +1,17 @@
+
+playerdata: {
+    "players": {
+        1: {       nombre = joueur
+            "playerID"
+            "chat"
+            "action"
+            "role"
+            "state"
+            "msg"
+        }
+    }
+    "chat" : [
+        ["global/village/lg", "msg"]
+    ]       liste de 20 max
+    "turn" : "lg"     defini le tour
+}
