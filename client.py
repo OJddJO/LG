@@ -53,38 +53,14 @@ class Interface:
         self.lover = self.data["lover"]
 
         self.roleDict = {
-            "Villageois": {
-                "chat": "village",
-                "def": "Vous devez éliminer les Loups Garou au vote !"
-            },
-            "Loup Garou": {
-                "chat": "lg",
-                "def": "Vous devez tuer tous les innocents !"
-            },
-            "Voyante": {
-                "chat": "voyante",
-                "def": "Vous pouvez voir le rôle d'un joueur\nchaque nuit !"
-            },
-            "Sorciere": {
-                "chat": "sorciere",
-                "def": "Vous pouvez sauver un joueur de la mort\net/ou tuer un joueur chaque nuit !\n(Une seule fois chaque pouvoir)"
-            },
-            "Chasseur": {
-                "chat": "chasseur",
-                "def": "Vous pouvez tuer un joueur lorsque vous\nmourrez !"
-            },
-            "Cupidon": {
-                "chat": "cupidon",
-                "def": "Vous pouvez lier deux joueurs ensembles !\n(Début de partie)"
-            },
-            "Petite Fille": {
-                "chat": "petite fille",
-                "def": "Vous pouvez espionner les Loups Garou chaque\nnuit !"
-            },
-            "Salvateur": {
-                "chat": "salvateur",
-                "def": "Vous pouvez protéger un joueur\nde la mort chaque nuit !\n(Pas deux fois de suite la meme personne)"
-            }
+            "Villageois": "Vous devez éliminer les Loups Garous au vote !",
+            "Loup Garou": "Vous devez tuer tous les innocents !",
+            "Voyante": "Vous pouvez voir le rôle d'un joueur\nchaque nuit !",
+            "Sorciere": "Vous pouvez sauver un joueur de la mort\net/ou tuer un joueur chaque nuit !\n(Une seule fois chaque pouvoir)",
+            "Chasseur": "Vous pouvez tuer un joueur lorsque vous\nmourrez !",
+            "Cupidon": "Vous pouvez lier deux joueurs ensembles !\n(Début de partie)",
+            "Petite Fille": "Vous pouvez espionner les Loups Garou chaque\nnuit !",
+            "Salvateur": "Vous pouvez protéger un joueur\nde la mort chaque nuit !\n(Pas deux fois de suite la meme personne)"
         }
 
         self.root = tk.Tk()
@@ -104,7 +80,7 @@ class Interface:
         self.roletext.grid(column=1, row=2)
         self.statebox = tk.Label(self.infoFrame, text="Vous êtes " + self.state) # State
         self.statebox.grid(column=1, row=3)
-        self.roleInfoText = tk.Label(self.infoFrame, text=self.roleDict[self.role]["def"]) # Role info
+        self.roleInfoText = tk.Label(self.infoFrame, text=self.roleDict[self.role]) # Role info
         self.roleInfoText.grid(column=1, row=4)
         self.playerIDText = tk.Label(self.infoFrame, text="Votre ID est " + str(self.playerID)) # Player ID
         self.playerIDText.grid(column=1, row=5)
@@ -153,7 +129,7 @@ class Interface:
             for msg in self.receivedChat:
                 if msg[0] == "global":
                     self.chatbox.insert(tk.END, msg[1] + "\n")
-                elif msg[0] == self.roleDict[self.role]["chat"]:
+                elif msg[0] == self.role:
                     self.chatbox.insert(tk.END, msg[1] + "\n")
                 elif msg[0] == self.playerID:
                     self.chatbox.insert(tk.END, msg[1] + "\n")
@@ -175,7 +151,7 @@ class Interface:
 
         self.updateChat()
         if self.lover != "" and self.loverText.grid_info() == {}:
-            self.loverText.config(text="Vous êtes amoureux du joueur " + self.lover)
+            self.loverText.config(text="Vous êtes amoureux du joueur " + str(self.lover))
             self.loverText.grid(column=1, row=6)
 
 
