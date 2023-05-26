@@ -81,7 +81,7 @@ class Server:
         data = eval(data)
         if data["msg"] != "":
             if data["msg"].startswith("/help"):
-                self.data["chat"].append([data["playerID"], "Liste des commandes: /help, /joueurs en vie, /lg, /vote [ID joueur], /lgvote [ID joueur], /amour [ID joueur] [ID joueur], /proteger [ID joueur] /tuer [ID joueur], /sauver [ID joueur]"])
+                self.data["chat"].append([data["playerID"], "Liste des commandes: /help, /joueurs en vie, /lg, /chat, /vote [ID joueur], /lgvote [ID joueur], /amour [ID joueur] [ID joueur], /proteger [ID joueur] /tuer [ID joueur], /sauver [ID joueur]"])
 
             elif data["msg"].startswith("/joueurs en vie"):
                 alivePlayers = []
@@ -119,6 +119,20 @@ class Server:
                         self.data["chat"].append([data["playerID"], "Une erreur est survenue ! Veuillez réessayer."])
                 else:
                     self.data["chat"].append([data["playerID"], "Vous ne pouvez pas faire cela maintenant !"])
+            
+            elif data["msg"].startswith("/proteger"): #salvateur
+                pass
+
+            elif data["msg"].startswith("/chat"): #change chat for lg
+                if data["role"] == "Loup Garou":
+                    if data["chat"] == "Loup Garou":
+                        self.data["players"][data["playerID"]]["chat"] = "global"
+                        self.data["chat"].append([data["playerID"], "Vous êtes maintenant dans le chat global !"])
+                    else:
+                        self.data["players"][data["playerID"]]["chat"] = "Loup Garou"
+                        self.data["chat"].append([data["playerID"], "Vous êtes maintenant dans le chat des Loups Garous !"])
+                else:
+                    self.data["chat"].append([data["playerID"], "Vous n'êtes pas Loup Garou !"])
 
             elif data["msg"].startswith("/lgvote"): #vote loup garou
                 if self.data["turn"] == "lg" and self.data["players"][data["playerID"]]["role"] == "Loup Garou":
