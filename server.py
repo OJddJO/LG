@@ -27,7 +27,7 @@ class Server:
         self.playercount = 0 #define nb of players
         self.data = {
             "players": {},
-            "chat": [],
+            "chat": [["global", "Bienvenue dans le chat ! Tapez /help pour afficher la liste des commandes"]],
             "turn": "cupidon"
         }
         self.roles = [] #define roles
@@ -78,23 +78,49 @@ class Server:
         data = eval(data)
         if data["msg"] != "":
             if data["msg"].startswith("/help"):
-                self.data["chat"].append([data["playerID"], "Liste des commandes: /help, /vote [ID joueur], /lgvote [ID joueur], /amour [ID joueur] [IDjoueur], /tuer [ID joueur], /sauver [ID joueur]"])
+                self.data["chat"].append([data["playerID"], "Liste des commandes: /help, /vote [ID joueur], /lgvote [ID joueur], /fleche [ID joueur] [ID joueur], /tuer [ID joueur], /sauver [ID joueur]"])
             elif data["msg"].startswith("/vote"):
                 pass
             elif data["msg"].startswith("/lgvote"):
                 pass
-            elif data["msg"].startswith("/amour"):
+            elif data["msg"].startswith("/fleche"):
+                if self.data["turn"] == "cupidon" and self.data["players"][data["playerID"]]["role"] == "Cupidon":
+                    if data["msg"].split(" ")[1] == data["msg"].split(" ")[2]:
+                        self.data["chat"].append([data["playerID"], "Vous ne pouvez pas faire cela !"])
+                    else:
+                        j1 = int(data["msg"].split(" ")[1])
+                        j2 = int(data["msg"].split(" ")[2])
+                        self.data["chat"].append([j1, f"Vous êtes touché(e) par la flèche Cupidon ! Vous êtes maintenant follement amoureux du Joueur {str(j2)}. Si l'un de vous meurt, l'autre vous suivra dans la mort !"])
+                        self.data["chat"].append([j2, f"Vous êtes touché(e) par la flèche Cupidon ! Vous êtes maintenant follement amoureux du Joueur {str(j1)}. Si l'un de vous meurt, l'autre vous suivra dans la mort !"])
+                        self.data["players"][j1]["lover"] = j2
+                        self.data["players"][j2]["lover"] = j1
+                        self.nextTurn()
+                elif self.data["players"][data["playerID"]]["role"] != "Cupidon":
+                    self.data["chat"].append([data["playerID"], "Vous n'êtes pas Cupidon !"])
+                else:
+                    self.data["chat"].append([data["playerID"], "Vous ne pouvez pas faire cela !"])
+            elif data["msg"].startswith("/tuer"): #sorciere
                 pass
-            elif data["msg"].startswith("/tuer"):
-                pass
-            elif data["msg"].startswith("/sauver"):
+            elif data["msg"].startswith("/sauver"): #sorciere
                 pass
             else:
                 self.data["chat"].append([data["chat"], f"[Player {data['playerID']}] {data['msg']}"])
 
 
     def nextTurn(self):
-        pass
+        currentTurn = self.data["turn"]
+        if currentTurn == "cupidon":
+            self.data["turn"] = "jour"
+        elif currentTurn == "jour":
+            self.data["turn"] = "voyante"
+        elif currentTurn == "voyante":
+            self.data["turn"] = "salvateur"
+        elif currentTurn == "salvateur":
+            self.data["turn"] = "lg"
+        elif currentTurn == "lg":
+            self.data["turn"] = "sorciere"
+        elif currentTurn == "sorciere":
+            self.data["turn"] = "jour"
 
 
     def connPlayer(self):
@@ -185,7 +211,6 @@ class Server:
         
         if len(self.data["chat"]) > 100: #limit chat size to 100
             self.data["chat"].pop(0)
-
 
 
 server = Server()

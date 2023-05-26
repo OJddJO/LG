@@ -9,7 +9,10 @@ class Network:
 
         self.server = str(input('Server Address : '))
         self.ip = str(self.server.split(":")[0])
-        self.port = int(self.server.split(":")[1])
+        try:
+            self.port = int(self.server.split(":")[1])
+        except:
+            self.port = 5757
         print(self.ip, "/", self.port)
         self.addr = (self.ip, self.port)
 
@@ -43,11 +46,13 @@ class Interface:
         self.role = self.data["role"]
         self.chat = self.data["chat"]
         self.receivedChat = []
+        self.loggedChat = []
         self.lastMsg = ""
         self.state = self.data["state"]
         self.action = self.data["action"]
         self.msg = ""
         self.lover = self.data["lover"]
+        print([self.lover])
 
         self.roleDict = {
             "Villageois": {
@@ -103,6 +108,9 @@ class Interface:
         self.statebox.grid(column=1, row=3)
         self.roleInfoText = tk.Label(self.infoFrame, text=self.roleDict[self.role]["def"]) # Role info
         self.roleInfoText.grid(column=1, row=4)
+        self.playerIDText = tk.Label(self.infoFrame, text="Votre ID est " + str(self.playerID)) # Player ID
+        self.playerIDText.grid(column=1, row=5)
+        self.loverText = tk.Label(self.infoFrame) # Lover
 
         self.chatbox = tk.Text(self.frame, height=20, width=50) # Chatbox
         self.chatbox.grid(column=2, row=1, columnspan=2)
@@ -136,10 +144,13 @@ class Interface:
     
     def updateChat(self):
         self.receivedChat = self.data["chat"]
+        if self.loggedChat != []:
+            for i in range(len(self.receivedChat)):
+                if self.receivedChat[i] == self.loggedChat[-1]:
+                    self.receivedChat = self.receivedChat[i+1:]
+                    break
         if self.receivedChat != []:
-            if self.receivedChat[-1] != self.lastMsg:
-                msg = self.receivedChat[-1]
-                print(msg)
+            for msg in self.receivedChat:
                 if msg[0] == "global":
                     self.chatbox.insert(tk.END, msg[1] + "\n")
                 elif msg[0] == self.roleDict[self.role]["chat"]:
@@ -147,14 +158,23 @@ class Interface:
                 elif msg[0] == self.playerID:
                     self.chatbox.insert(tk.END, msg[1] + "\n")
                 self.chatbox.see(tk.END)
-                self.lastMsg = msg
+            self.loggedChat = self.receivedChat
 
 
     def update(self):
         self.root.update()
         data = self.send()
         self.data = eval(data)
+
+        # Update data
+        self.state = self.data["players"][self.playerID]["state"]
+        self.action = self.data["players"][self.playerID]["action"]
+        self.lover = self.data["players"][self.playerID]["lover"]
+
         self.updateChat()
+        if self.lover != "" and self.lover.grid_info() == {}:
+            self.loverText.config(text="Vous êtes amoureux du joueur " + self.lover)
+            self.loverText.grid(column=1, row=6)
 
 
 app = Interface()
