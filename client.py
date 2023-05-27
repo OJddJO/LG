@@ -9,6 +9,8 @@ class Network:
 
         self.server = str(input('Server Address : '))
         self.ip = str(self.server.split(":")[0])
+        if self.ip == "":
+            self.ip = "127.0.0.1"
         try:
             self.port = int(self.server.split(":")[1])
         except:
@@ -50,6 +52,7 @@ class Interface:
         self.lastMsg = ""
         self.state = self.data["state"]
         self.msg = ""
+        self.lastMsg = ""
         self.lover = self.data["lover"]
 
         self.roleDict = {
@@ -86,7 +89,7 @@ class Interface:
         self.playerIDText.grid(column=1, row=5)
         self.loverText = tk.Label(self.infoFrame) # Lover
 
-        self.chatbox = tk.Text(self.frame, height=20, width=50) # Chatbox
+        self.chatbox = tk.Text(self.frame, state="disabled", height=20, width=50) # Chatbox
         self.chatbox.grid(column=2, row=1, columnspan=2)
 
         self.chatentry = tk.Entry(self.frame, width=50) # Chat entry
@@ -113,6 +116,10 @@ class Interface:
     def validateMessage(self):
         if self.data["gameState"] == "En jeu":
             self.msg = self.chatentry.get()
+            if self.msg == self.lastMsg:
+                self.msg = "" # Prevent spam
+            else:
+                self.lastMsg = self.msg
         else:
             self.msg = ""
         self.chatentry.delete(0, tk.END)
@@ -121,20 +128,25 @@ class Interface:
     def updateChat(self):
         self.receivedChat = self.data["chat"]
         if self.loggedChat != []:
-            for i in range(len(self.receivedChat)):
-                if self.receivedChat[i] == self.loggedChat[-1]:
-                    self.receivedChat = self.receivedChat[i+1:]
-                    break
+            # Remove already logged messages
+            for msg in self.loggedChat:
+                if msg in self.receivedChat:
+                    self.receivedChat.remove(msg)
         if self.receivedChat != []:
+            self.chatbox.config(state="normal")
             for msg in self.receivedChat:
-                if msg[0] == "global":
+                if msg[0] == "Global":
                     self.chatbox.insert(tk.END, msg[1] + "\n")
                 elif msg[0] == self.role:
                     self.chatbox.insert(tk.END, msg[1] + "\n")
                 elif msg[0] == self.playerID:
                     self.chatbox.insert(tk.END, msg[1] + "\n")
                 self.chatbox.see(tk.END)
-            self.loggedChat = self.receivedChat
+            self.chatbox.config(state="disabled")
+            self.loggedChat += self.receivedChat
+            #limit logged messages to 10
+            if len(self.loggedChat) > 10:
+                self.loggedChat = self.loggedChat[-10:]
 
 
     def update(self):
@@ -148,8 +160,8 @@ class Interface:
 
         # Update info
         self.root.title("Loup Garou - " + self.data["gameState"] + " - " + self.state)
-
         self.updateChat()
+        self.statebox.config(text="Vous êtes " + self.state)
         if self.lover != "" and self.loverText.grid_info() == {}:
             self.loverText.config(text="Vous êtes amoureux du joueur " + str(self.lover))
             self.loverText.grid(column=1, row=6)

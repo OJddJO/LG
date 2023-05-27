@@ -1,5 +1,4 @@
-
-playerdata: {
+data: {
     "players": {
         1: {       nombre = joueur
             "playerID"
@@ -16,4 +15,10 @@ playerdata: {
     ]       liste de 100 max
     "turn" : "lg"     defini le tour
     "gameState": "starting"
+}
+
+nightEvent: {
+    "lg": playerID
+    "sorciere": ["action", playerID]
+    "love" : playerID
 }
