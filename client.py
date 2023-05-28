@@ -25,7 +25,7 @@ class Network:
         try:
             self.client.connect(self.addr)
             print("Connected !")
-            return self.client.recv(8192).decode()
+            return self.client.recv(16384).decode()
         except:
             pass
 
@@ -33,7 +33,7 @@ class Network:
     def send(self, data):
         try:
             self.client.send(str.encode(data))
-            return self.client.recv(8192).decode()
+            return self.client.recv(16384).decode()
         except socket.error as e:
             print(e)
 
@@ -143,10 +143,12 @@ class Interface:
                     self.chatbox.insert(tk.END, msg[1] + "\n")
                 self.chatbox.see(tk.END)
             self.chatbox.config(state="disabled")
+            print(self.receivedChat)
+            print(self.loggedChat)
             self.loggedChat += self.receivedChat
-            #limit logged messages to 10
-            if len(self.loggedChat) > 10:
-                self.loggedChat = self.loggedChat[-10:]
+            #limit logged messages to 11
+            if len(self.loggedChat) > 11:
+                self.loggedChat = self.loggedChat[-11:]
 
 
     def update(self):
@@ -158,6 +160,7 @@ class Interface:
         # Update data
         self.state = self.data["players"][self.playerID]["state"]
         self.lover = self.data["players"][self.playerID]["lover"]
+        self.chat = self.data["players"][self.playerID]["chat"]
 
         # Update info
         self.root.title("Loup Garou - " + self.data["gameState"] + " - " + self.state)
