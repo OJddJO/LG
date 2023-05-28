@@ -264,7 +264,7 @@ class Server:
             elif data["msg"].startswith("/sauver"): #sorciere
                 if self.data["turn"] == "sorciere" and self.data["players"][data["playerID"]]["role"] == "Sorciere":
                     try:
-                        j = int(data["msg"].split(" ")[1])
+                        j = int(self.nightEvent["lg"])
                         if self.data["players"][j]["state"] == "Mort":
                             self.data["players"][j]["state"] = "Vivant"
                             self.data["chat"].append([data["playerID"], f"Vous avez sauvé le joueur {j} !"])

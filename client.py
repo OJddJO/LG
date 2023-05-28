@@ -152,6 +152,7 @@ class Interface:
     def update(self):
         self.root.update()
         data = self.send()
+        print(data)
         self.data = eval(data)
 
         # Update data
