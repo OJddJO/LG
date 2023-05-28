@@ -38,6 +38,8 @@ class Server:
         self.voteStat = {} #vote
         self.nightEvent = {} #night event
         self.sorcierePot = ['kill', 'save']
+        self.lastProtected = 0
+        self.chasseurLastKill = True
 
         self.lastProtected = 0
 
@@ -88,7 +90,7 @@ class Server:
             elif data["msg"].startswith("/joueurs en vie"):
                 alivePlayers = []
                 for player in self.data["players"]:
-                    if self.data["players"][player]["state"] == "Vivant":
+                    if self.data["players"][player]["state"] != "Mort":
                         alivePlayers.append(player)
                 self.data["chat"].append([data["playerID"], f"Joueurs en vie: {alivePlayers}"])
 
@@ -96,32 +98,34 @@ class Server:
                 if self.data["turn"] == "vote" and self.data["players"][data["playerID"]]["state"] == "Vote":
                     try:
                         vote = data["msg"].split(" ")[1]
-                        if int(vote) in self.data["players"] or vote == "blanc":
+                        if vote == "blanc":
                             self.data["players"][data["playerID"]]["state"] = "Vivant"
-                            if vote == "blanc":
-                                self.data["chat"].append(["Global", f"Le Joueur {str(data['playerID'])} a voté blanc !"])
-                                vote = 0
-                            else:
-                                self.data["chat"].append(["Global", f"Le Joueur {str(data['playerID'])} a voté pour le Joueur {str(vote)}"])
+                            self.data["chat"].append(["Global", f"Le Joueur {str(data['playerID'])} a voté blanc !"])
+                            vote = 0
+                        elif int(vote) in self.data["players"]:
                             vote = int(vote)
-                            if vote not in self.voteStat:
-                                self.voteStat[vote] = 1
-                            else:
-                                self.voteStat[vote] += 1
+                            self.data["players"][data["playerID"]]["state"] = "Vivant"
+                            self.data["chat"].append(["Global", f"Le Joueur {str(data['playerID'])} a voté pour le Joueur {str(vote)}"])
 
-                            #check if all players voted
-                            allVoted = True
-                            for player in self.data["players"]:
-                                if self.data["players"][player]["state"] == "Vote":
-                                    allVoted = False
-                            if allVoted:
-                                maxVote = max(self.voteStat, key=self.voteStat.get)
-                                if maxVote == 0:
-                                    self.data["chat"].append(["Global", f"Le vote est terminé ! Personne n'a été éliminé !"])
-                                else:
-                                    self.data["chat"].append(["Global", f"Le vote est terminé ! Le Joueur {str(maxVote)} a été éliminé ! Il était {self.data['players'][maxVote]['role']} !"])
-                                    self.data["players"][maxVote]["state"] = "Mort"
-                                self.nextTurn()
+                        if vote not in self.voteStat:
+                            self.voteStat[vote] = 1
+                        else:
+                            self.voteStat[vote] += 1
+
+                        #check if all players voted
+                        allVoted = True
+                        for player in self.data["players"]:
+                            if self.data["players"][player]["state"] == "Vote":
+                                allVoted = False
+                        if allVoted:
+                            maxVote = max(self.voteStat, key=self.voteStat.get)
+                            if maxVote == 0:
+                                self.data["chat"].append(["Global", f"Le vote est terminé ! Personne n'a été éliminé !"])
+                            else:
+                                self.data["chat"].append(["Global", f"Le vote est terminé ! Le Joueur {str(maxVote)} a été éliminé ! Il était {self.data['players'][maxVote]['role']} !"])
+                                self.data["players"][maxVote]["state"] = "Mort"
+                            self.voteStat = {}
+                            self.nextTurn()
 
                         else:
                             self.data["chat"].append([data["playerID"], "Ce joueur n'existe pas !"])
@@ -136,10 +140,13 @@ class Server:
                     if data["role"] == "Salvateur":
                         try:
                             protect = int(data["msg"].split(" ")[1])
-                            if protect in self.data["players"]:
-                                self.data["players"][protect]["protected"] = True
-                                self.data["chat"].append([protect, f"Le Salvateur vous a protégé !"])
-                                self.nextTurn()
+                            if protect in self.data["players"] and self.data["players"][protect]["state"] == "Vivant":
+                                if protect != self.lastProtected:
+                                    self.data["players"][protect]["protected"] = True
+                                    self.data["chat"].append([protect, f"Le Salvateur vous a protégé !"])
+                                    self.nextTurn()
+                                else:
+                                    self.data["chat"].append([data["playerID"], "Vous avez déjà protégé ce joueur au tour précédent !"])
                             else:
                                 self.data["chat"].append([data["playerID"], "Ce joueur n'existe pas !"])
                         except Exception as e:
@@ -180,34 +187,38 @@ class Server:
                     self.data["chat"].append([data["playerID"], "Vous n'êtes pas Loup Garou !"])
 
             elif data["msg"].startswith("/lgvote"): #vote loup garou
-                if self.data["turn"] == "lg":
+                if self.data["turn"] == "lg" and data["state"] == "vivant":
                     if data["role"] == "Loup Garou":
                         try:
                             vote = int(data["msg"].split(" ")[1])
                             if vote in self.data["players"]:
-                                self.data["players"][data["playerID"]]["state"] = "Vivant"
-                                self.data["chat"].append(["Loup Garou", f"Le Loup Garou {str(data['playerID'])} a voté pour le Joueur {str(vote)}"])
-                                self.data["chat"].append(["Petite Fille", f"Le Loup Garou {str(data['playerID'])} a voté pour le Joueur {str(vote)}"])
-                                if vote not in self.voteStat:
-                                    self.voteStat[vote] = 1
-                                else:
-                                    self.voteStat[vote] += 1
-
-                                #check if all players voted
-                                allVoted = True
-                                for player in self.data["players"]:
-                                    if self.data["players"][player]["state"] == "Vote":
-                                        allVoted = False
-                                if allVoted:
-                                    self.data["chat"].append(["Loup Garou", f"Tous les Loups Garous ont voté !"])
-                                    self.data["chat"].append(["Petite Fille", f"Tous les Loups Garous ont voté !"])
-                                    maxVote = max(self.voteStat, key=self.voteStat.get)
-                                    if not self.data["players"][maxVote]["protected"]:
-                                        self.data["players"][maxVote]["state"] = "Mort"
-                                        self.nightEvent["lg"] = maxVote
+                                if self.data["players"][vote]["state"] == "Vivant":
+                                    self.data["players"][data["playerID"]]["state"] = "Vivant"
+                                    self.data["chat"].append(["Loup Garou", f"Le Loup Garou {str(data['playerID'])} a voté pour le Joueur {str(vote)}"])
+                                    self.data["chat"].append(["Petite Fille", f"Le Loup Garou {str(data['playerID'])} a voté pour le Joueur {str(vote)}"])
+                                    if vote not in self.voteStat:
+                                        self.voteStat[vote] = 1
                                     else:
-                                        self.nightEvent["lg"] = "none"
-                                    self.nextTurn()
+                                        self.voteStat[vote] += 1
+
+                                    #check if all players voted
+                                    allVoted = True
+                                    for player in self.data["players"]:
+                                        if self.data["players"][player]["state"] == "Vote":
+                                            allVoted = False
+                                    if allVoted:
+                                        self.data["chat"].append(["Loup Garou", f"Tous les Loups Garous ont voté !"])
+                                        self.data["chat"].append(["Petite Fille", f"Tous les Loups Garous ont voté !"])
+                                        maxVote = max(self.voteStat, key=self.voteStat.get)
+                                        if not self.data["players"][maxVote]["protected"]:
+                                            self.data["players"][maxVote]["state"] = "Mort"
+                                            self.nightEvent["lg"] = maxVote
+                                        else:
+                                            self.nightEvent["lg"] = "none"
+                                        self.voteStat = {}
+                                        self.nextTurn()
+                                else:
+                                    self.data["chat"].append([data["playerID"], "Ce joueur est déjà mort !"])
                             else:
                                 self.data["chat"].append([data["playerID"], "Ce joueur n'existe pas !"])
                         except Exception as e:
@@ -247,15 +258,10 @@ class Server:
                             if self.data["players"][j]["state"] == "Mort":
                                 self.data["chat"].append([data["playerID"], "Ce joueur est déjà mort !"])
                             else:
-                                #check if player is protected
-                                if not self.data["players"][j]["protected"]:
-                                    self.data["players"][j]["state"] = "Mort"
-                                    self.data["chat"].append([data["playerID"], f"Vous avez tué le joueur {j} !"])
-                                    self.nightEvent["sorciere"] = ["kill", j]
-                                    self.sorcierePot.remove("kill")
-                                else:
-                                    self.data["chat"].append([data["playerID"], "Ce joueur était protégé !"])
-
+                                self.data["players"][j]["state"] = "Mort"
+                                self.data["chat"].append([data["playerID"], f"Vous avez tué le joueur {j} !"])
+                                self.nightEvent["sorciere"] = ["kill", j]
+                                self.sorcierePot.remove("kill")
                                 self.nextTurn()
                         except:
                             self.data["chat"].append([data["playerID"], "Une erreur est survenue ! Veuillez réessayer."])
@@ -271,7 +277,9 @@ class Server:
                     if "save" in self.sorcierePot:
                         try:
                             j = self.nightEvent["lg"]
-                            if self.data["players"][j]["state"] == "Mort":
+                            if j == "none":
+                                self.data["chat"].append([data["playerID"], "Personne n'a été tué par les Loups Garous !"])
+                            elif self.data["players"][j]["state"] == "Mort":
                                 self.data["players"][j]["state"] = "Vivant"
                                 self.data["chat"].append([data["playerID"], f"Vous avez sauvé le joueur {j} !"])
                                 self.nightEvent["sorciere"] = ["save", j]
@@ -314,10 +322,13 @@ class Server:
                     if data["role"] == "Chasseur":
                         try:
                             kill = int(data["msg"].split(" ")[1])
-                            if kill in self.data["players"] and self.data["players"][kill]["state"] == "Vivant":
-                                self.data["players"][kill]["state"] = "Mort"
-                                self.data["chat"].append(["Globzl", f"Le Chasseur a tué le joueur {kill} ! Il était {self.data['players'][kill]['role']} !"])
-                                self.nextTurn()
+                            if kill in self.data["players"]:
+                                if self.data["players"][kill]["state"] == "Vivant":
+                                    self.data["players"][kill]["state"] = "Mort"
+                                    self.data["chat"].append(["Global", f"Le Chasseur a tué le joueur {kill} ! Il était {self.data['players'][kill]['role']} !"])
+                                    self.nextTurn()
+                                else:
+                                    self.data["chat"].append([data["playerID"], "Ce joueur est déjà mort !"])
                             else:
                                 self.data["chat"].append([data["playerID"], "Ce joueur n'existe pas !"])
                         except Exception as e:
@@ -378,17 +389,18 @@ class Server:
             self.data["chat"].append(["Global", "Tout le monde se rendort...\n"])
             self.nightEvent = {}
         elif previousTurn == "voyante":
-            self.data["chat"].append(["Global", "La voyante se rendort...\n"])
+            self.data["chat"].append(["Global", "La Voyante se rendort...\n"])
         elif previousTurn == "salvateur":
-            self.data["chat"].append(["Global", "Le salvateur se rendort...\n"])
+            self.data["chat"].append(["Global", "Le Salvateur se rendort...\n"])
         elif previousTurn == "lg":
-            self.data["chat"].append(["Global", "Les loups garous se rendorment...\n"])
+            self.data["chat"].append(["Global", "Les Loups Garous se rendorment...\n"])
             for player in self.data["players"]:
                 if self.data["players"][player]["protected"] == True:
                     self.data["players"][player]["protected"] = False
                     self.data["chat"].append([player, f"Le joueur {player} a été protégé !\n"])
+                    self.lastProtected = player
         elif previousTurn == "sorciere":
-            self.data["chat"].append(["Global", "La sorcière se rendort...\n"])
+            self.data["chat"].append(["Global", "La Sorcière se rendort...\n"])
         elif previousTurn == "cupidon":
             self.data["chat"].append(["Global", "Cupidon se rendort...\n"])
 
@@ -408,17 +420,19 @@ class Server:
 
             #night recap
             try:
-                if self.nightEvent["lg"] != ["none"]:
-                    self.data["chat"].append(["Global", f"Le joueur {str(self.nightEvent['lg'])} a été tué par les loups garous ! Il était {self.data['players'][self.nightEvent['lg']]['role']} !"])
+                if self.nightEvent["lg"] != "none" and self.data["players"][self.nightEvent["lg"]]["state"] == "Mort":
+                    self.data["chat"].append(["Global", f"Le joueur {str(self.nightEvent['lg'])} a été tué par les Loups Garous ! Il était {self.data['players'][self.nightEvent['lg']]['role']} !"])
+                elif self.nightEvent["lg"] != "none" and self.data["players"][self.nightEvent["lg"]]["state"] == "Vivant":
+                    self.data["chat"].append(["Global", f"Le joueur {str(self.nightEvent['lg'])} a été tué par les Loups Garous !"])
                 else:
-                    self.data["chat"].append(["Global", "Les loups garous n'ont tué personne !"])
+                    self.data["chat"].append(["Global", "Les Loups Garous n'ont tué personne !"])
             except:
                 pass
             try:
                 if self.nightEvent["sorciere"][0] == "kill":
                     self.data["chat"].append(["Global", f"Le joueur {str(self.nightEvent['sorciere'][1])} a été tué par la sorcière ! Il était {self.data['players'][self.nightEvent['sorciere'][1]]['role']} !"])
                 elif self.nightEvent["sorciere"][0] == "save":
-                    self.data["chat"].append(["Global", f"Cependant, le joueur {str(self.nightEvent['sorciere'][1])} a été sauvé par la sorcière !"])
+                    self.data["chat"].append(["Global", f"Cependant, le joueur {str(self.nightEvent['sorciere'][1])} a été sauvé par la Sorcière !"])
             except:
                 pass
 
@@ -426,13 +440,13 @@ class Server:
             try:
                 if self.data["players"][self.nightEvent['lg']]["lover"] != "none" and self.data["players"][self.nightEvent['lg']]["state"] == "Mort":
                     self.data["players"][self.data["players"][self.nightEvent['lg']]["lover"]]["state"] = "Mort"
-                    self.data["chat"].append(["Global", f"Le joueur {self.data['players'][self.nightEvent['lg']]['lover']} s'est suicidé par amour !"])
+                    self.data["chat"].append(["Global", f"Le joueur {self.data['players'][self.nightEvent['lg']]['lover']} s'est suicidé par amour ! Il était {self.data['players'][self.data['players'][self.nightEvent['lg']]['lover']]['role']} !"])
             except:
                 pass
             try:
                 if self.data["players"][self.nightEvent['sorciere'][1]]["lover"] != "none" and self.data["players"][self.nightEvent['sorciere'][1]]["state"] == "Mort":
                     self.data["players"][self.data["players"][self.nightEvent['sorciere'][1]]["lover"]]["state"] = "Mort"
-                    self.data["chat"].append(["Global", f"Le joueur {self.data['players'][self.nightEvent['sorciere'][1]]['lover']} s'est suicidé par amour !"])
+                    self.data["chat"].append(["Global", f"Le joueur {self.data['players'][self.nightEvent['sorciere'][1]]['lover']} s'est suicidé par amour ! Il était {self.data['players'][self.data['players'][self.nightEvent['sorciere'][1]]['lover']]['role']} !"])
             except:
                 pass
 
@@ -448,18 +462,19 @@ class Server:
             
             #check if the chasseur is dead
             try:
-                if self.nightEvent["lg"] != "none":
-                    if self.data["players"][self.nightEvent["lg"]]["role"] == "Chasseur":
+                for player in self.data["players"]:
+                    if self.data["players"][player]["role"] == "Chasseur" and self.data["players"][player]["state"] == "Mort" and self.chasseurLastKill:
                         self.data["chat"].append(["Global", "Le Chasseur juste avant de mourir tire sa dernière balle..."])
                         self.data["chat"].append(["Global", "Chasseur, choisissez un joueur à tuer !"])
                         self.data["turn"] = "chasseur"
+                        self.chasseurLastKill = False
                         return
-                    else:
-                        self.nextTurn()
-                else:
-                    self.nextTurn()
-            except:
-                self.nextTurn()
+            except Exception as e:
+                print(e)
+
+            self.data["turn"] = "jour"
+            self.nextTurn()
+            return
 
         elif nextTurn == "vote":
             #check if the game is over
@@ -568,8 +583,7 @@ class Server:
     
     def runGame(self):
         if len(self.data["chat"]) > 10: #limit chat size to 10 messages
-            print(self.data["chat"][-10:])
-            self.data["chat"] = self.data["chat"][-10:]
+            self.data["chat"] = self.data["chat"].copy()[-10:]
             print(self.data["chat"])
 
 

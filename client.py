@@ -62,7 +62,7 @@ class Interface:
             "Sorciere": "Vous pouvez sauver un joueur de la mort\net/ou tuer un joueur chaque nuit !\n(Une seule fois chaque pouvoir)",
             "Chasseur": "Vous pouvez tuer un joueur lorsque vous\nmourrez !",
             "Cupidon": "Vous pouvez lier deux joueurs ensembles !\n(Début de partie)",
-            "Petite Fille": "Vous pouvez espionner les Loups Garou chaque\nnuit !",
+            "Petite Fille": "Vous pouvez espionner les Loups Garou\nchaque nuit !",
             "Salvateur": "Vous pouvez protéger un joueur\nde la mort chaque nuit !\n(Pas deux fois de suite la meme personne)"
         }
 
@@ -81,7 +81,7 @@ class Interface:
         self.imagebox.grid(column=1, row=1)
         self.roletext = tk.Label(self.infoFrame, text="Role : " + self.role) # Role
         self.roletext.grid(column=1, row=2)
-        self.statebox = tk.Label(self.infoFrame, text="Vous êtes " + self.state) # State
+        self.statebox = tk.Label(self.infoFrame, text="Etat : " + self.state) # State
         self.statebox.grid(column=1, row=3)
         self.roleInfoText = tk.Label(self.infoFrame, text=self.roleDict[self.role]) # Role info
         self.roleInfoText.grid(column=1, row=4)
@@ -119,6 +119,9 @@ class Interface:
             if self.msg == self.lastMsg:
                 self.msg = "" # Prevent spam
             else:
+                #limit message length to 100
+                if len(self.msg) > 100:
+                    self.msg = self.msg[:100]
                 self.lastMsg = self.msg
         else:
             self.msg = ""
@@ -143,8 +146,6 @@ class Interface:
                     self.chatbox.insert(tk.END, msg[1] + "\n")
                 self.chatbox.see(tk.END)
             self.chatbox.config(state="disabled")
-            print(self.receivedChat)
-            print(self.loggedChat)
             self.loggedChat += self.receivedChat
             #limit logged messages to 11
             if len(self.loggedChat) > 11:
@@ -154,7 +155,6 @@ class Interface:
     def update(self):
         self.root.update()
         data = self.send()
-        print(data)
         self.data = eval(data)
 
         # Update data
@@ -165,7 +165,7 @@ class Interface:
         # Update info
         self.root.title("Loup Garou - " + self.data["gameState"] + " - " + self.state)
         self.updateChat()
-        self.statebox.config(text="Vous êtes " + self.state)
+        self.statebox.config(text="Etat : " + self.state)
         if self.lover != "" and self.loverText.grid_info() == {}:
             self.loverText.config(text="Vous êtes amoureux du joueur " + str(self.lover))
             self.loverText.grid(column=1, row=6)
