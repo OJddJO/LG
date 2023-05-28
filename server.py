@@ -61,7 +61,7 @@ class Server:
 
         while True:
             try:
-                recvData = conn.recv(8192).decode() #receive data from client
+                recvData = conn.recv(16384).decode() #receive data from client
                 if not recvData:
                     print("Client", addr, ": Disconnected")
                 else:
@@ -568,6 +568,7 @@ class Server:
     
     def runGame(self):
         if len(self.data["chat"]) > 10: #limit chat size to 10 messages
+            print(self.data["chat"][-10:])
             self.data["chat"] = self.data["chat"][-10:]
             print(self.data["chat"])
 
