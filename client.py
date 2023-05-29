@@ -136,6 +136,7 @@ class Interface:
             self.playerIDText.config(bg="grey95", fg="black")
             self.loverText.config(bg="grey95", fg="black")
 
+
     def send(self):
         data = {
             "playerID": self.playerID,
