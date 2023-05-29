@@ -99,6 +99,42 @@ class Interface:
         self.chatbutton = tk.Button(self.frame, text="[➜]", command=self.validateMessage) # Chat button
         self.chatbutton.grid(column=3, row=2)
 
+        #Menu
+        self.menu = tk.Menu(self.root)
+        self.root.config(menu=self.menu)
+        self.menu.add_command(label="Changer de thème", command=self.changeTheme)
+        self.theme = "dark"
+        self.changeTheme()
+        self.themeList = ["light", "dark"]
+
+
+    def changeTheme(self):
+        if self.theme == "light":
+            self.theme = "dark"
+            self.root.config(bg="black")
+            self.frame.config(bg="black")
+            self.infoFrame.config(bg="black")
+            self.chatbox.config(bg="black", fg="white")
+            self.chatentry.config(bg="black", fg="white", insertbackground="white")
+            self.chatbutton.config(bg="black", fg="white")
+            self.roletext.config(bg="black", fg="white")
+            self.statebox.config(bg="black", fg="white")
+            self.roleInfoText.config(bg="black", fg="white")
+            self.playerIDText.config(bg="black", fg="white")
+            self.loverText.config(bg="black", fg="white")
+        else:
+            self.theme = "light"
+            self.root.config(bg="grey95")
+            self.frame.config(bg="grey95")
+            self.infoFrame.config(bg="grey95")
+            self.chatbox.config(bg="white", fg="black")
+            self.chatentry.config(bg="white", fg="black", insertbackground="black")
+            self.chatbutton.config(bg="grey95", fg="black")
+            self.roletext.config(bg="grey95", fg="black")
+            self.statebox.config(bg="grey95", fg="black")
+            self.roleInfoText.config(bg="grey95", fg="black")
+            self.playerIDText.config(bg="grey95", fg="black")
+            self.loverText.config(bg="grey95", fg="black")
 
     def send(self):
         data = {
