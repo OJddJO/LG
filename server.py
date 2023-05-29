@@ -400,9 +400,10 @@ class Server:
             #check if the lovers are a loup garou and a villageois and if they won
             try:
                 for player in self.data["players"]:
-                    if self.data["players"][player]["lover"] != "none" and self.data["players"][player]["role"] == "Loup Garou" and self.data["players"][self.data["players"][player]["lover"]]["role"] == "Villageois":
+                    if self.data["players"][player]["lover"] != "none" and self.data["players"][player]["role"] == "Loup Garou" and self.data["players"][self.data["players"][player]["lover"]]["role"] != "Loup Garou":
                         loupGarouLover = player
                         villageoisLover = self.data["players"][player]["lover"]
+                        break
                 #check if the lovers are still alive
                 if self.data["players"][loupGarouLover]["state"] == "Vivant" and self.data["players"][villageoisLover]["state"] == "Vivant":
                     loverVivant = True
@@ -507,6 +508,27 @@ class Server:
                 self.data["gameState"] = "Victoire des Loups Garous" #loup garou win
                 self.data["chat"].append(["Global", "Les loups garous ont gagné !"])
                 return
+            #check if the lovers are a loup garou and a villageois and if they won
+            try:
+                for player in self.data["players"]:
+                    if self.data["players"][player]["lover"] != "none" and self.data["players"][player]["role"] == "Loup Garou" and self.data["players"][self.data["players"][player]["lover"]]["role"] != "Loup Garou":
+                        loupGarouLover = player
+                        villageoisLover = self.data["players"][player]["lover"]
+                        break
+                #check if the lovers are still alive
+                if self.data["players"][loupGarouLover]["state"] == "Vivant" and self.data["players"][villageoisLover]["state"] == "Vivant":
+                    loverVivant = True
+                #check if other players are dead
+                otherAllDead = True
+                for player in self.data["players"]:
+                    if player != loupGarouLover and player != villageoisLover and self.data["players"][player]["state"] == "Vivant":
+                        otherAllDead = False
+                if loverVivant and otherAllDead:
+                    self.data["gameState"] = "Victoire des Amoureux"
+                    self.data["chat"].append(["Global", "Les amoureux ont gagné !"])
+                    return
+            except Exception as e:
+                print(e)
             
             #check if the chasseur is dead
             try:
