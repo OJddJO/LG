@@ -7,6 +7,10 @@ import random
 class Server:
 
     def __init__(self):
+
+        hostname = socket.gethostname()
+        ip = socket.gethostbyname(hostname)
+        print("Your current IP:", ip)
         
         self.ip = str(input("Ip (default: 127.0.0.1): "))
         if self.ip == "":
