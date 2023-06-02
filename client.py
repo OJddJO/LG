@@ -25,7 +25,7 @@ class Network:
         try:
             self.client.connect(self.addr)
             print("Connected !")
-            return self.client.recv(16384).decode()
+            return self.client.recv(4096).decode()
         except:
             pass
 
@@ -33,7 +33,7 @@ class Network:
     def send(self, data):
         try:
             self.client.send(str.encode(data))
-            return self.client.recv(16384).decode()
+            return self.client.recv(4096).decode()
         except socket.error as e:
             print(e)
 

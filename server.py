@@ -12,9 +12,9 @@ class Server:
         ip = socket.gethostbyname(hostname)
         print("Your current IP:", ip)
         
-        self.ip = str(input("Ip (default: 127.0.0.1): "))
+        self.ip = str(input("Ip (default: 0.0.0.0): "))
         if self.ip == "":
-            self.ip = "127.0.0.1"
+            self.ip = "0.0.0.0"
 
         self.port = str(input("Port (default: 5757): "))
         if self.port == "":
@@ -67,12 +67,21 @@ class Server:
 
         while True:
             try:
-                recvData = conn.recv(16384).decode() #receive data from client
+                recvData = conn.recv(4096).decode() #receive data from client
                 if not recvData:
                     print("Client", addr, ": Disconnected")
                 else:
                     
                     self.getData(recvData)
+                    #remake data to optimize data transfer
+                    data = {
+                        "players": {
+                            playerdata["playerID"]: self.data["players"][self.playerdata["playerID"]]
+                        },
+                        "chat": self.data["chat"],
+                        "turn": self.data["turn"],
+                        "gameState": self.data["gameState"]
+                    }
                     sendData = str(self.data) #send data to client
                     reply = str.encode(sendData)
 
