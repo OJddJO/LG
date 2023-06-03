@@ -76,7 +76,7 @@ class Server:
                     #remake data to optimize data transfer
                     data = {
                         "players": {
-                            playerdata["playerID"]: self.data["players"][self.playerdata["playerID"]]
+                            playerdata["playerID"]: self.data["players"][playerdata["playerID"]]
                         },
                         "chat": self.data["chat"],
                         "turn": self.data["turn"],
