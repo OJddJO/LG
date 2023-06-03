@@ -67,7 +67,7 @@ class Server:
 
         while True:
             try:
-                recvData = conn.recv(4096).decode() #receive data from client
+                recvData = conn.recv(2048).decode() #receive data from client
                 if not recvData:
                     print("Client", addr, ": Disconnected")
                 else:
