@@ -1,6 +1,7 @@
 import socket
 from _thread import *
 import random
+import netifaces as ni
 
 
 # loup garou
@@ -8,9 +9,9 @@ class Server:
 
     def __init__(self):
 
-        hostname = socket.gethostname()
-        ip = socket.gethostbyname(hostname)
-        print("Your current IP:", ip)
+        for interfaces in ni.interfaces():
+            for link in ni.ifaddresses(interfaces)[ni.AF_INET]:
+                print(interfaces, link["addr"])
         
         self.ip = str(input("Ip (default: 0.0.0.0): "))
         if self.ip == "":
