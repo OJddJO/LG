@@ -92,6 +92,7 @@ class Server:
                 break
 
         self.playercount -= 1
+        self.roles.append(playerdata["role"]) #add role back to the list if disconnected
 
 
     def getData(self, data):
