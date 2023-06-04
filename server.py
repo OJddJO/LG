@@ -1,7 +1,6 @@
 import socket
 from _thread import *
 import random
-import netifaces as ni
 
 
 # loup garou
@@ -9,13 +8,17 @@ class Server:
 
     def __init__(self):
 
-        for interfaces in ni.interfaces():
-            for link in ni.ifaddresses(interfaces)[ni.AF_INET]:
-                print(interfaces, link["addr"])
-        
-        self.ip = str(input("Ip (default: 0.0.0.0): "))
+        #get all ip addresses
+        self.ipList = []
+        for i in socket.gethostbyname_ex(socket.gethostname())[2]:
+            if not i.startswith("127."):
+                self.ipList.append(i)
+        print("IP Addresses:", self.ipList)
+        print("Default IP:", self.ipList[-1])
+
+        self.ip = str(input(f"Ip (default: {self.ipList[-1]}): "))
         if self.ip == "":
-            self.ip = "0.0.0.0"
+            self.ip = self.ipList[-1]
 
         self.port = str(input("Port (default: 5757): "))
         if self.port == "":
